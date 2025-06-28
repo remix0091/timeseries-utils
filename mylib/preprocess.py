@@ -2,38 +2,44 @@ import pandas as pd
 import numpy as np
 from mylib.outliers import remove_outliers, select_outlier_detection_method
 
-def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
-    """Из датафрейма df берём ряд sid, приводим недели к датам,
-       убираем дубликаты, вставляем пропущенные недели, мелкие числа → NaN."""
-    
+def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=False):
+    """
+    Из датафрейма df берёт ряд sid, превращает недели в даты,
+    убирает почти-ноли, восстанавливает пропущенные недели.
+    """
+    import numpy as np
+    import pandas as pd
+
     sub = df[df["series_id"] == sid].copy()
 
+    # Преобразуем недели в ISO-даты (понедельники)
     sub["week_dt"] = pd.to_datetime(
         sub["week"].str.extract(r"W(\d{1,2})_(\d{2})")
                     .apply(lambda x: f"20{x[1]}-W{x[0]}-1", axis=1),
-        format="%G-W%V-%u")
+        format="%G-W%V-%u"
+    )
 
     sub["value"] = pd.to_numeric(sub["value"], errors="coerce")
-    print("[DEBUG] Тип значений:", sub["value"].dtype)
-    print("[DEBUG] Уникальные значения после float:", sub["value"].unique()[:10])
-    n_small = (sub["value"] <= thr).sum()
-    sub.loc[sub["value"] <= thr, "value"] = np.nan
-    print("[DEBUG] Кол-во значений <= порога:", (sub["value"] <= thr).sum())
-    print("[DEBUG] Кол-во NaN после замены:", sub["value"].isna().sum())
+    # Заменяем почти-ноль на NaN (включая нули!)
+    mask_small = sub["value"].abs() <= thr
+    sub.loc[mask_small, "value"] = np.nan
+    print(f"[ЛОГ] Преобразовано в NaN по порогу ({thr}): {mask_small.sum()}")
 
+    # Удаляем только строки, где 'value' отсутствует полностью
+    sub = sub[~sub["value"].isna() | sub["week_dt"].isna() == False]
+
+    # Группируем, сохраняя NaN если они есть
     grouped = (
-    sub.groupby("week_dt", dropna=False)["value"]
-    .agg(agg)
-    .to_frame()
-)
-    
+        sub.groupby("week_dt", dropna=False)["value"]
+        .agg(lambda x: x.iloc[0] if x.isna().all() else x.agg(agg))  # сохраняет NaN, если все NaN
+        .to_frame()
+    )
 
+    # Полный календарь по неделям
     full_idx = pd.date_range(grouped.index.min(), grouped.index.max(), freq="W-MON")
-    full = pd.DataFrame(index=full_idx)
-    merged = full.merge(grouped, left_index=True, right_index=True, how="left")
-    print("[DEBUG] Кол-во NaN в grouped:", grouped["value"].isna().sum())
-    print("[DEBUG] Кол-во NaN в merged:", merged["value"].isna().sum())
+    merged = pd.DataFrame(index=full_idx).merge(grouped, left_index=True, right_index=True, how="left")
 
+  
     if verbose:
         print(f"[ЛОГ] Ряд: {sid}")
         print(f"  - Даты: {grouped.index.min().date()} — {grouped.index.max().date()}")
