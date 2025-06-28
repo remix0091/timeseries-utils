@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from mylib.outliers import remove_outliers
 
-def prepare_weekly_series(df, sid, thr=1e-5, agg="sum"):
+def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     """Из датафрейма df берём ряд sid, приводим недели к датам,
        убираем дубликаты, вставляем пропущенные недели, мелкие числа → NaN."""
     
@@ -22,18 +22,18 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum"):
     full_idx = pd.date_range(grouped.index.min(), grouped.index.max(), freq="W-MON")
     full = pd.DataFrame(index=full_idx)
     merged = full.merge(grouped, left_index=True, right_index=True, how="left")
-
-    print(f"[ЛОГ] Ряд: {sid}")
-    print(f"  - Даты: {grouped.index.min().date()} — {grouped.index.max().date()}")
-    print(f"  - Преобразовано в NaN по порогу ({thr}): {n_small}")
-    print(f"  - Пропущенных недель (NaN): {merged['value'].isna().sum()}")
+    if verbose^
+        print(f"[ЛОГ] Ряд: {sid}")
+        print(f"  - Даты: {grouped.index.min().date()} — {grouped.index.max().date()}")
+        print(f"  - Преобразовано в NaN по порогу ({thr}): {n_small}")
+        print(f"  - Пропущенных недель (NaN): {merged['value'].isna().sum()}")
 
     return merged["value"]
 
 def prepare_clean_series(df, sid, threshold=1e-5, agg="sum", verbose=True):
     log_meta = {}
     log_meta["series_id"] = sid
-    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg)
+    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg, verbose=False)
     n_missing = series.isna().sum()
     log_meta["missing_count"] = n_missing
     log_meta["missing_indices"] = series[series.isna()].index.tolist()
