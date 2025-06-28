@@ -71,3 +71,20 @@ def prepare_clean_series(df, sid, threshold=1e-5, agg="sum", verbose=True):
     series_clean[outlier_mask] = np.nan
 
     return series_clean, log_meta, outlier_mask
+
+
+def drop_temporal_features(df, keywords=("lag", "shift", "relative", "time_since", "delta")):
+    """
+    Удаляет временные признаки из датафрейма на основе ключевых слов в названии колонок.
+
+    df       : исходный датафрейм с фичами
+    keywords : список ключевых слов для фильтрации (по умолчанию: временные сдвиги)
+
+    Возвращает: датафрейм без временных признаков
+    """
+    drop_cols = [col for col in df.columns if any(k in col.lower() for k in keywords)]
+    if drop_cols:
+        print(f"[ЛОГ] Удалены временные признаки: {drop_cols}")
+    else:
+        print(f"[ЛОГ] Временные признаки не найдены.")
+    return df.drop(columns=drop_cols, errors="ignore")
