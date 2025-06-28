@@ -20,6 +20,19 @@ def wape(y_true, y_pred):
         return np.nan
     return np.sum(np.abs(y_pred - y_true)) / denom * 100
 
+def durbin_watson_safe(y_true: pd.Series, y_pred: pd.Series) -> float:
+    """
+    безопасный расчёт Durbin–Watson исключая пропуски
+    """
+    residuals = y_true - y_pred
+    residuals = residuals.dropna()
+
+    if len(residuals) < 3:
+        return np.nan
+
+    diff = np.diff(residuals)
+    return np.sum(diff**2) / np.sum(residuals**2)
+
 # Оценка качества восстановления разных методов
 def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
     """
@@ -55,15 +68,16 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
         predictions[method] = (na_idx[mask], y_pred)  # сохраняем предсказания
 
         if len(y_true) < 3:
-            results.append([method, np.nan, np.nan, np.nan, np.nan])
+            results.append([m, np.nan, np.nan, np.nan, np.nan, np.nan])
             continue
 
         mse = mean_squared_error(y_true, y_pred)
         mae = mean_absolute_error(y_true, y_pred)
         mape_ = mape(y_true, y_pred)
         wape_ = wape(y_true, y_pred)
+        dw = durbin_watson_safe(y_true, y_pred)
+        results.append([m, mse, mae, mape_, wape_, dw])
 
-        results.append([method, mse, mae, mape_, wape_])
 
     if plot:
         import matplotlib.pyplot as plt
@@ -82,7 +96,7 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
         plt.tight_layout()
         plt.show()
 
-    return pd.DataFrame(results, columns=["method", "MSE", "MAE", "MAPE_%", "WAPE_%"])
+    return pd.DataFrame(results, columns=["method", "MSE", "MAE", "MAPE_%", "WAPE_%", "DW"])
 
 
 
@@ -137,15 +151,16 @@ def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True, meth
         predictions[method] = (mask_idx[ok], y_pred)
 
         if len(y_true) < 3:
-            results.append([method, np.nan, np.nan, np.nan, np.nan])
+            results.append([method, np.nan, np.nan, np.nan, np.nan, np.nan])
             continue
 
         mse = mean_squared_error(y_true, y_pred)
         mae = mean_absolute_error(y_true, y_pred)
         mape_ = mape(y_true, y_pred)
         wape_ = wape(y_true, y_pred)
+        dw = durbin_watson_safe(y_true, y_pred)
+        results.append([method, mse, mae, mape_, wape_, dw])
 
-        results.append([method, mse, mae, mape_, wape_])
 
     if plot:
         plt.figure(figsize=(12, 5))
@@ -163,4 +178,6 @@ def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True, meth
         plt.tight_layout()
         plt.show()
 
-    return pd.DataFrame(results, columns=["method", "MSE", "MAE", "MAPE_%", "WAPE_%"])
+    return pd.DataFrame(results, columns=["method", "MSE", "MAE", "MAPE_%", "WAPE_%", "DW"])
+
+
