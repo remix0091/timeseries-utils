@@ -86,7 +86,7 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
 
 
 
-def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True, methods=None):
+def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True, methods=None, method_params=None):
     """
     Сравнивает методы восстановления на пользовательских пропусках.
 
@@ -120,11 +120,14 @@ def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True, meth
 
     if methods is None:
         methods = ["linear", "mean", "median", "ffill", "bfill", "spline", "rolling"]
+    if method_params is None:
+        method_params = {}
     results = []
     predictions = {}
 
     for method in methods:
-        filled = impute_series(masked.copy(), method=method)
+        params = method_params.get(method, {})
+        filled = impute_series(masked.copy(), method=method, **params)
 
         y_true = full_series.loc[mask_idx].values
         y_pred = filled.loc[mask_idx].values
