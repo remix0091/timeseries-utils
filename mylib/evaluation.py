@@ -25,7 +25,7 @@ def durbin_watson_safe(y_true: pd.Series, y_pred: pd.Series) -> float:
     безопасный расчёт Durbin–Watson исключая пропуски
     """
     residuals = y_true - y_pred
-    residuals = residuals.dropna()
+    residuals = pd.Series(residuals).dropna()
 
     if len(residuals) < 3:
         return np.nan
