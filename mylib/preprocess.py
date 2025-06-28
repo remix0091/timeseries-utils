@@ -21,7 +21,11 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     print("[DEBUG] Кол-во значений <= порога:", (sub["value"] <= thr).sum())
     print("[DEBUG] Кол-во NaN после замены:", sub["value"].isna().sum())
 
-    grouped = sub.groupby("week_dt")["value"].agg(agg).to_frame()
+    grouped = (
+    sub.groupby("week_dt", dropna=False)["value"]
+    .agg(agg)
+    .to_frame()
+)
     
 
     full_idx = pd.date_range(grouped.index.min(), grouped.index.max(), freq="W-MON")
