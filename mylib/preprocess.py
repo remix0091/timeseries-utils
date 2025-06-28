@@ -22,6 +22,7 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     full_idx = pd.date_range(grouped.index.min(), grouped.index.max(), freq="W-MON")
     full = pd.DataFrame(index=full_idx)
     merged = full.merge(grouped, left_index=True, right_index=True, how="left")
+
     if verbose:
         print(f"[ЛОГ] Ряд: {sid}")
         print(f"  - Даты: {grouped.index.min().date()} — {grouped.index.max().date()}")
