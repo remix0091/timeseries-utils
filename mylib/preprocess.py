@@ -25,7 +25,6 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     mask_small = sub["value"].abs() <= thr
     n_small = mask_small.sum()
     sub.loc[mask_small, "value"] = np.nan
-    print(f"[ЛОГ] Преобразовано в NaN по порогу ({thr}): {mask_small.sum()}")
 
     # 4. Агрегация по неделям (с сохранением NaN если они были)
     grouped = (
