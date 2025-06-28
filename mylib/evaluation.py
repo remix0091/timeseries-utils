@@ -68,7 +68,7 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
         predictions[method] = (na_idx[mask], y_pred)  # сохраняем предсказания
 
         if len(y_true) < 3:
-            results.append([m, np.nan, np.nan, np.nan, np.nan, np.nan])
+            results.append([method, np.nan, np.nan, np.nan, np.nan, np.nan])
             continue
 
         mse = mean_squared_error(y_true, y_pred)
@@ -76,7 +76,7 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
         mape_ = mape(y_true, y_pred)
         wape_ = wape(y_true, y_pred)
         dw = durbin_watson_safe(y_true, y_pred)
-        results.append([m, mse, mae, mape_, wape_, dw])
+        results.append([method, mse, mae, mape_, wape_, dw])
 
 
     if plot:
