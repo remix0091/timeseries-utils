@@ -14,14 +14,21 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
         format="%G-W%V-%u")
 
     sub["value"] = pd.to_numeric(sub["value"], errors="coerce")
+    print("[DEBUG] Тип значений:", sub["value"].dtype)
+    print("[DEBUG] Уникальные значения после float:", sub["value"].unique()[:10])
     n_small = (sub["value"] <= thr).sum()
     sub.loc[sub["value"] <= thr, "value"] = np.nan
+    print("[DEBUG] Кол-во значений <= порога:", (sub["value"] <= thr).sum())
+    print("[DEBUG] Кол-во NaN после замены:", sub["value"].isna().sum())
 
     grouped = sub.groupby("week_dt")["value"].agg(agg).to_frame()
+    
 
     full_idx = pd.date_range(grouped.index.min(), grouped.index.max(), freq="W-MON")
     full = pd.DataFrame(index=full_idx)
     merged = full.merge(grouped, left_index=True, right_index=True, how="left")
+    print("[DEBUG] Кол-во NaN в grouped:", grouped["value"].isna().sum())
+    print("[DEBUG] Кол-во NaN в merged:", merged["value"].isna().sum())
 
     if verbose:
         print(f"[ЛОГ] Ряд: {sid}")
