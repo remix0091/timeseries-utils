@@ -23,6 +23,7 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     # 3. Числовой тип и замена почти-нолей на NaN
     sub["value"] = pd.to_numeric(sub["value"], errors="coerce")
     mask_small = sub["value"].abs() <= thr
+     n_small = mask_small.sum()
     sub.loc[mask_small, "value"] = np.nan
     print(f"[ЛОГ] Преобразовано в NaN по порогу ({thr}): {mask_small.sum()}")
 
