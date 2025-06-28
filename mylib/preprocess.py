@@ -31,12 +31,12 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
 
     return merged["value"]
 
-def prepare_clean_series(df, sid, threshold=1e-6, agg="sum", verbose=True):
+def prepare_clean_series(df, sid, threshold=1e-5, agg="sum", verbose=True):
     log_meta = {}
     log_meta["series_id"] = sid
 
     # Подготовка ряда
-    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg)
+    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg, verbose=False)
     n_missing = series.isna().sum()
     log_meta["missing_count"] = n_missing
     log_meta["missing_indices"] = series[series.isna()].index.tolist()
