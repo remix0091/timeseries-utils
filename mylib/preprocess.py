@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from mylib.outliers import remove_outliers
+from mylib.outliers import remove_outliers, select_outlier_detection_method
 
 def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     """Из датафрейма df берём ряд sid, приводим недели к датам,
