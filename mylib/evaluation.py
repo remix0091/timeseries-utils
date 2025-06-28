@@ -86,7 +86,7 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
 
 
 
-def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True):
+def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True, methods=None):
     """
     Сравнивает методы восстановления на пользовательских пропусках.
 
@@ -118,7 +118,8 @@ def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True):
     masked = full_series.copy()
     masked.loc[mask_idx] = np.nan
 
-    methods = ["linear", "mean", "median", "ffill", "bfill", "spline", "rolling"]
+    if methods is None:
+        methods = ["linear", "mean", "median", "ffill", "bfill", "spline", "rolling"]
     results = []
     predictions = {}
 
