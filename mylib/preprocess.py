@@ -14,8 +14,8 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
         format="%G-W%V-%u")
 
     sub["value"] = pd.to_numeric(sub["value"], errors="coerce")
-    n_small = (sub["value"] < thr).sum()
-    sub.loc[sub["value"] < thr, "value"] = np.nan
+    n_small = (sub["value"] <= thr).sum()
+    sub.loc[sub["value"] <= thr, "value"] = np.nan
 
     grouped = sub.groupby("week_dt")["value"].agg(agg).to_frame()
 
