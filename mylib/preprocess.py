@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from mylib.outliers import remove_outliers
 
 def prepare_weekly_series(df, sid, thr=1e-5, agg="sum"):
     """Из датафрейма df берём ряд sid, приводим недели к датам,
@@ -28,3 +29,24 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum"):
     print(f"  - Пропущенных недель (NaN): {merged['value'].isna().sum()}")
 
     return merged["value"]
+
+def prepare_clean_series(df, sid, threshold=1e-5, agg="sum", verbose=True):
+    log_meta = {}
+    log_meta["series_id"] = sid
+    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg)
+    n_missing = series.isna().sum()
+    log_meta["missing_count"] = n_missing
+    log_meta["missing_indices"] = series[series.isna()].index.tolist()
+
+    if verbose:
+        print(f"[ЛОГ] Пропусков до удаления выбросов: {n_missing}")
+
+    clean_series = remove_outliers(series)
+    n_outliers = (series != clean_series).sum()
+    log_meta["outlier_count"] = n_outliers
+    log_meta["outlier_indices"] = clean_series.index[(series != clean_series)].tolist()
+
+    if verbose:
+        print(f"[ЛОГ] Выбросов удалено: {n_outliers}")
+
+    return clean_series, log_meta
