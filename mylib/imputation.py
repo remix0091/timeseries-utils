@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from mylib.preprocess import prepare_weekly_series
-from mylib.outliers import remove_outliers, plot_outliers
+from mylib.outliers import remove_outliers, plot_outliers, select_outlier_detection_method
 
 def fill_rolling_mean(s: pd.Series, window: int = 5) -> pd.Series:
     """
