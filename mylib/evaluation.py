@@ -86,3 +86,77 @@ def evaluate_methods_with_mask(df, series_id, step=5, plot=True):
 
 
 
+def evaluate_methods_on_custom_mask(series: pd.Series, mask_idx, plot=True):
+    """
+    Сравнивает методы восстановления на пользовательских пропусках.
+
+    series   : исходный pd.Series
+    mask_idx : список индексов, окон [(start, end)], или их сочетание
+    plot     : отображать график
+
+    Возвращает: DataFrame с метриками
+    """
+
+    full_series = series.copy()
+
+    # 👇 Поддержка смешанного списка: [(start, end), index1, index2, ...]
+    final_idx = []
+
+    for item in mask_idx:
+        if isinstance(item, tuple) and len(item) == 2:
+            # это окно (start, end)
+            start, end = item
+            final_idx.extend(series.index[start:end + 1])
+        elif pd.Timestamp(item) in series.index:
+            # одиночный индекс
+            final_idx.append(item)
+        else:
+            continue
+
+    mask_idx = pd.Index(final_idx)
+
+    masked = full_series.copy()
+    masked.loc[mask_idx] = np.nan
+
+    methods = ["linear", "mean", "median", "ffill", "bfill", "spline", "rolling"]
+    results = []
+    predictions = {}
+
+    for method in methods:
+        filled = impute_series(masked.copy(), method=method)
+
+        y_true = full_series.loc[mask_idx].values
+        y_pred = filled.loc[mask_idx].values
+
+        ok = ~(np.isnan(y_true) | np.isnan(y_pred))
+        y_true, y_pred = y_true[ok], y_pred[ok]
+        predictions[method] = (mask_idx[ok], y_pred)
+
+        if len(y_true) < 3:
+            results.append([method, np.nan, np.nan, np.nan, np.nan])
+            continue
+
+        mse = mean_squared_error(y_true, y_pred)
+        mae = mean_absolute_error(y_true, y_pred)
+        mape_ = mape(y_true, y_pred)
+        wape_ = wape(y_true, y_pred)
+
+        results.append([method, mse, mae, mape_, wape_])
+
+    if plot:
+        plt.figure(figsize=(12, 5))
+        plt.plot(series, label="Оригинальный ряд", color="black", linewidth=1.5)
+        plt.scatter(mask_idx, full_series.loc[mask_idx], label="Маскировано", color="gray", marker="x")
+
+        for method, (x, y) in predictions.items():
+            plt.scatter(x, y, label=method, alpha=0.6)
+
+        plt.title("Сравнение методов восстановления (ручная маска)")
+        plt.xlabel("Дата")
+        plt.ylabel("Значение")
+        plt.grid(True, linestyle="--", alpha=0.4)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+    return pd.DataFrame(results, columns=["method", "MSE", "MAE", "MAPE_%", "WAPE_%"])
