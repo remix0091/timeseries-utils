@@ -2,40 +2,38 @@ import pandas as pd
 import numpy as np
 from mylib.outliers import remove_outliers, select_outlier_detection_method
 
-def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=False):
+def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
     """
-    Из датафрейма df берёт ряд sid, превращает недели в даты,
-    убирает почти-ноли, восстанавливает пропущенные недели.
+    df: датафрейм с колонками week / series_id / value
+    sid: какой ряд извлекаем
+    thr: всё <= thr считаем пропуском (в т.ч. нули)
+    agg: метод агрегации (sum, mean, last и т.п.)
     """
-    import numpy as np
-    import pandas as pd
 
+    # 1. Фильтрация нужного ряда
     sub = df[df["series_id"] == sid].copy()
 
-    # Преобразуем недели в ISO-даты (понедельники)
+    # 2. Преобразование недели в дату
     sub["week_dt"] = pd.to_datetime(
         sub["week"].str.extract(r"W(\d{1,2})_(\d{2})")
                     .apply(lambda x: f"20{x[1]}-W{x[0]}-1", axis=1),
         format="%G-W%V-%u"
     )
 
+    # 3. Числовой тип и замена почти-нолей на NaN
     sub["value"] = pd.to_numeric(sub["value"], errors="coerce")
-    # Заменяем почти-ноль на NaN (включая нули!)
     mask_small = sub["value"].abs() <= thr
     sub.loc[mask_small, "value"] = np.nan
     print(f"[ЛОГ] Преобразовано в NaN по порогу ({thr}): {mask_small.sum()}")
 
-    # Удаляем только строки, где 'value' отсутствует полностью
-    sub = sub[~sub["value"].isna() | sub["week_dt"].isna() == False]
-
-    # Группируем, сохраняя NaN если они есть
+    # 4. Агрегация по неделям (с сохранением NaN если они были)
     grouped = (
         sub.groupby("week_dt", dropna=False)["value"]
-        .agg(lambda x: x.iloc[0] if x.isna().all() else x.agg(agg))  # сохраняет NaN, если все NaN
+        .agg(lambda x: x.iloc[0] if x.isna().all() else x.agg(agg))
         .to_frame()
     )
 
-    # Полный календарь по неделям
+    # 5. Восстановление пропущенных недель
     full_idx = pd.date_range(grouped.index.min(), grouped.index.max(), freq="W-MON")
     merged = pd.DataFrame(index=full_idx).merge(grouped, left_index=True, right_index=True, how="left")
 
