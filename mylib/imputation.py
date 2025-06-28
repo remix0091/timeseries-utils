@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 def fill_rolling_mean(s: pd.Series, window: int = 5) -> pd.Series:
     """
     Заполняем NaN средним из `window` последних (!) уже-заполненных значений.
