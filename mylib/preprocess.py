@@ -31,23 +31,28 @@ def prepare_weekly_series(df, sid, thr=1e-5, agg="sum", verbose=True):
 
     return merged["value"]
 
-def prepare_clean_series(df, sid, threshold=1e-5, agg="sum", verbose=True):
+def prepare_clean_series(df, sid, threshold=1e-6, agg="sum", verbose=True):
     log_meta = {}
     log_meta["series_id"] = sid
-    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg, verbose=False)
+
+    # Подготовка ряда
+    series = prepare_weekly_series(df, sid, thr=threshold, agg=agg)
     n_missing = series.isna().sum()
     log_meta["missing_count"] = n_missing
     log_meta["missing_indices"] = series[series.isna()].index.tolist()
-
     if verbose:
         print(f"[ЛОГ] Пропусков до удаления выбросов: {n_missing}")
 
-    clean_series = remove_outliers(series)
-    n_outliers = (series != clean_series).sum()
+    # Находим выбросы один раз
+    outlier_mask = select_outlier_detection_method(series)
+    n_outliers = outlier_mask.sum()
     log_meta["outlier_count"] = n_outliers
-    log_meta["outlier_indices"] = clean_series.index[(series != clean_series)].tolist()
-
+    log_meta["outlier_indices"] = outlier_mask[outlier_mask].index.tolist()
     if verbose:
         print(f"[ЛОГ] Выбросов удалено: {n_outliers}")
 
-    return clean_series, log_meta
+    # Удаляем выбросы
+    series_clean = series.copy()
+    series_clean[outlier_mask] = np.nan
+
+    return series_clean, log_meta, outlier_mask
