@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from mylib.preprocess import prepare_weekly_series
-from mylib.outliers import remove_outliers
+from mylib.outliers import remove_outliers, plot_outliers
 
 def fill_rolling_mean(s: pd.Series, window: int = 5) -> pd.Series:
     """
@@ -124,10 +124,12 @@ def impute_series(series, enable=True, method="linear", verbose=True, **kw):
 
     return filled
 
-def process_all_series(df, config):
+def process_all_series(df, config, verbose=True, plot=True):
     """
     df      : исходный DataFrame с week / series_id / value
     config  : словарь настроек по каждому ряду
+    verbose : выводить логи
+    plot    : строить график выбросов
     return  : словарь {series_id: {"raw", "clean", "filled", "log"}}
     """
     output = {}
@@ -139,9 +141,12 @@ def process_all_series(df, config):
         log_meta["missing_count"] = raw.isna().sum()
         log_meta["missing_indices"] = raw[raw.isna()].index.tolist()
 
-        clean = remove_outliers(raw)
-        log_meta["outlier_count"] = (raw != clean).sum()
-        log_meta["outlier_indices"] = clean.index[(raw != clean)].tolist()
+        outlier_mask = select_outlier_detection_method(raw)
+        clean = raw.copy()
+        clean[outlier_mask] = np.nan
+
+        log_meta["outlier_count"] = outlier_mask.sum()
+        log_meta["outlier_indices"] = outlier_mask[outlier_mask].index.tolist()
 
         filled = impute_series(
             clean,
@@ -159,7 +164,11 @@ def process_all_series(df, config):
             "log": log_meta
         }
 
-        print(f"[ЛОГ] Ряд {sid}: пропусков={log_meta['missing_count']}, выбросов={log_meta['outlier_count']}, итоговых NaN={log_meta['final_missing']}")
-        print("-" * 40)
+        if verbose:
+            print(f"[ЛОГ] Ряд {sid}: пропусков={log_meta['missing_count']}, выбросов={log_meta['outlier_count']}, итоговых NaN={log_meta['final_missing']}")
+        if plot:
+            plot_outliers(raw, mask=outlier_mask, title_prefix=f"Выбросы в ряде {sid}")
+        if verbose or plot:
+            print("-" * 40)
 
     return output
