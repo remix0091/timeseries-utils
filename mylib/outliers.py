@@ -6,6 +6,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
 from statsmodels.tsa.seasonal import STL
 from scipy.stats import zscore
+import matplotlib.pyplot as plt  # 🔥 добавлен для визуализации
 
 def select_outlier_detection_method(series):
     n = len(series.dropna())
@@ -54,3 +55,17 @@ def remove_outliers(series: pd.Series) -> pd.Series:
     out[mask] = np.nan
     print(f"[ЛОГ] Выбросы удалены: {mask.sum()} точек заменено на NaN")
     return out
+
+def plot_outliers(series, title_prefix="Обнаруженные выбросы"):
+    """Строит график временного ряда с выбросами, определёнными автоматически"""
+    # Получаем маску выбросов
+    mask = select_outlier_detection_method(series)
+
+    plt.figure(figsize=(12, 5))
+    plt.plot(series.index, series, label="Исходные данные")
+    plt.scatter(series.index[mask], series[mask], color="red", label="Выбросы")
+
+    plt.title(f"{title_prefix}")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
