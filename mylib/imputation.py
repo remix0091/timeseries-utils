@@ -138,21 +138,21 @@ def process_all_series(df, config, verbose=True, plot=True):
         log_meta = {"series_id": sid} # лог по этому ряду
  
         raw = prepare_weekly_series(df, sid)   # вытаскиваем нужный временной ряд по id
-        log_meta["missing_count"] = raw.isna().sum()
-        log_meta["missing_indices"] = raw[raw.isna()].index.tolist()
+        log_meta["missing_count"] = raw.isna().sum() #сколько пропусков изначально
+        log_meta["missing_indices"] = raw[raw.isna()].index.tolist() # где имеено эти пропуски
 
         outlier_mask = select_outlier_detection_method(raw)  # определяем где выбросы
         clean = raw.copy()
         clean[outlier_mask] = np.nan # заменяем выбросы на NaN
 
-        log_meta["outlier_count"] = outlier_mask.sum()
-        log_meta["outlier_indices"] = outlier_mask[outlier_mask].index.tolist()
+        log_meta["outlier_count"] = outlier_mask.sum() #сколько выбросов нашли
+        log_meta["outlier_indices"] = outlier_mask[outlier_mask].index.tolist()#какие именно (по индексу)
 
         filled = impute_series(
             clean,
             enable=params.get("enable", True),
             method=params.get("method", "linear"),
-            **{k: v for k, v in params.items() if k not in {"enable", "method"}} # передаём доп параметры
+            **{k: v for k, v in params.items() if k not in {"enable", "method"}} # передаём только нужные дополнительные параметры, не дублируя method и enable
         )
 
         log_meta["final_missing"] = filled.isna().sum() # сколько NaN осталось
