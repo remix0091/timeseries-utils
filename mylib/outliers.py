@@ -12,12 +12,12 @@ def select_outlier_detection_method(
     series,
     zscore_threshold=2.5,               # порог для обычного z-score
     stl_use_iqr=False,                  # если True — в STL используем IQR, а не std
-    stl_upper_std=1.8,                  # верхний порог std для STL
-    stl_lower_std=1.2,                  # нижний порог std для STL
+    stl_upper_std=2.5,                  # верхний порог std для STL
+    stl_lower_std=2.0,                  # нижний порог std для STL
     stl_iqr_multiplier=1.5,             # если используется IQR в STL — множитель
-    pca_use_iqr=True,                  # аналогично, для PCA — IQR вместо std
-    pca_upper_std=2.0,                  # верхняя граница std в PCA
-    pca_lower_std=1.5,                  # нижняя граница std в PCA
+    pca_use_iqr=False,                  # аналогично, для PCA — IQR вместо std
+    pca_upper_std=2.5,                  # верхняя граница std в PCA
+    pca_lower_std=2.5,                  # нижняя граница std в PCA
     pca_iqr_multiplier=1.3              # множитель IQR если используется в PCA
 ):
     n = len(series.dropna())  # считаем сколько непустых значений в ряду
