@@ -16,8 +16,8 @@ timeseries-utils/
 │   ├── imputation.py           # Заполнение пропусков (вручную и автоматически)
 │   ├── outliers.py             # Выявление и удаление аномалий, графики
 │   ├── evaluation.py           # Метрики восстановления и точности
-│   ├── test_pipeline.ipynb     # Тестирование 
 │
+├── test_pipeline.ipynb         # Тестирование 
 ├── fact.csv                    # Временные ряды
 ├── README.md                   # Описание проекта
 ```
