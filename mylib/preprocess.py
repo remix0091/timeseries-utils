@@ -88,3 +88,21 @@ def drop_temporal_features(df, keywords=("lag", "shift", "relative", "time_since
     else:
         print(f"[ЛОГ] Временные признаки не найдены.")
     return df.drop(columns=drop_cols, errors="ignore")
+
+
+def create_features(series: pd.Series, lags=(1, 2, 3), window=3):
+    """
+    Строит простые признаки для обучения модели.
+    Возвращает датафрейм с фичами и y.
+    """
+    df = pd.DataFrame({"y": series})
+    for lag in lags:
+        df[f"lag_{lag}"] = df["y"].shift(lag)
+    df[f"rolling_mean_{window}"] = df["y"].rolling(window=window).mean()
+
+    # Дата признаки
+    df["week"] = df.index.isocalendar().week
+    df["month"] = df.index.month
+    df["year"] = df.index.year
+
+    return df.dropna()
